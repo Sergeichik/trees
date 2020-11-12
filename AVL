@@ -1,217 +1,135 @@
-
 template <typename T>
 class AVL
 {
-    struct node
-    {
-        T data;
-        node* left;
-        node* right;
-        T height;
-    };
-
+   struct node // структура для представления узлов дерева
+{
+	T key;
+	unsigned char height;
+	node* left;
+	node* right;
+	node(T k) { key = k; left = right = 0; height = 1; }
+};
     node* root;
+unsigned char height(node* p)
+{
+	return p?p->height:0;
+}
 
-    void makeEmpty(node* t)
-    {
-        if(t == NULL)
-            return;
-        makeEmpty(t->left);
-        makeEmpty(t->right);
-        delete t;
-    }
+T bfactor(node* p)
+{
+	return height(p->right)-height(p->left);
+}
 
-    node* insert(T x, node* t)
-    {
-        if(t == NULL)
-        {
-            t = new node;
-            t->data = x;
-            t->height = 0;
-            t->left = t->right = NULL;
-        }
-        else if(x < t->data)
-        {
-            t->left = insert(x, t->left);
-            if(height(t->left) - height(t->right) == 2)
-            {
-                if(x < t->left->data)
-                    t = singleRightRotate(t);
-                else
-                    t = doubleRightRotate(t);
-            }
-        }
-        else if(x > t->data)
-        {
-            t->right = insert(x, t->right);
-            if(height(t->right) - height(t->left) == 2)
-            {
-                if(x > t->right->data)
-                    t = singleLeftRotate(t);
-                else
-                    t = doubleLeftRotate(t);
-            }
-        }
+void fixheight(node* p)
+{
+	unsigned char hl = height(p->left);
+	unsigned char hr = height(p->right);
+	p->height = (hl>hr?hl:hr)+1;
+}
 
-        t->height = max(height(t->left), height(t->right))+1;
-        return t;
-    }
-    T max(T left, T right){
-        if (left > right){
-            return left;
-            }else{
-            return right;    
-                }
-        }
-    node* singleRightRotate(node* &t)
-    {
-        node* u = t->left;
-        t->left = u->right;
-        u->right = t;
-        t->height = max(height(t->left), height(t->right))+1;
-        u->height = max(height(u->left), t->height)+1;
-        return u;
-    }
+node* rotateright(node* p) // правый поворот вокруг p
+{
+	node* q = p->left;
+	p->left = q->right;
+	q->right = p;
+	fixheight(p);
+	fixheight(q);
+	return q;
+}
 
-    node* singleLeftRotate(node* &t)
-    {
-        node* u = t->right;
-        t->right = u->left;
-        u->left = t;
-        t->height = max(height(t->left), height(t->right))+1;
-        u->height = max(height(t->right), t->height)+1 ;
-        return u;
-    }
+node* rotateleft(node* q) // левый поворот вокруг q
+{
+	node* p = q->right;
+	q->right = p->left;
+	p->left = q;
+	fixheight(q);
+	fixheight(p);
+	return p;
+}
 
-    node* doubleLeftRotate(node* &t)
-    {
-        t->right = singleRightRotate(t->right);
-        return singleLeftRotate(t);
-    }
+node* balance(node* p) // балансировка узла p
+{
+	fixheight(p);
+	if( bfactor(p)==2 )
+	{
+		if( bfactor(p->right) < 0 )
+			p->right = rotateright(p->right);
+		return rotateleft(p);
+	}
+	if( bfactor(p)==-2 )
+	{
+		if( bfactor(p->left) > 0  )
+			p->left = rotateleft(p->left);
+		return rotateright(p);
+	}
+	return p; // балансировка не нужна
+}
 
-    node* doubleRightRotate(node* &t)
-    {
-        t->left = singleLeftRotate(t->left);
-        return singleRightRotate(t);
-    }
+node* insert(node* p, T k) // вставка ключа k в дерево с корнем p
+{
+	if( !p ) return new node(k);
+	if( k<p->key )
+		p->left = insert(p->left,k);
+	else
+		p->right = insert(p->right,k);
+	return balance(p);
+}
 
-    node* findMin(node* t)
-    {
-        if(t == NULL)
-            return NULL;
-        else if(t->left == NULL)
-            return t;
-        else
-            return findMin(t->left);
-    }
+node* findmin(node* p) // поиск узла с минимальным ключом в дереве p 
+{
+	return p->left?findmin(p->left):p;
+}
 
-    node* findMax(node* t)
-    {
-        if(t == NULL)
-            return NULL;
-        else if(t->right == NULL)
-            return t;
-        else
-            return findMax(t->right);
-    }
-    
-    bool find(int x, node* t) 
+node* removemin(node* p) // удаление узла с минимальным ключом из дерева p
+{
+	if( p->left==0 )
+		return p->right;
+	p->left = removemin(p->left);
+	return balance(p);
+}
+
+node* erase(node* p, T k) // удаление ключа k из дерева p
+{
+	if( !p ) return 0;
+	if( k < p->key )
+		p->left = erase(p->left,k);
+	else if( k > p->key )
+		p->right = erase(p->right,k);	
+	else //  k == p->key 
+	{
+		node* q = p->left;
+		node* r = p->right;
+		delete p;
+		if( !r ) return q;
+		node* min = findmin(r);
+		min->right = removemin(r);
+		min->left = q;
+		return balance(min);
+	}
+	return balance(p);
+}
+ bool find(node* p, T k) 
 { 
     // Traverse untill root reaches to dead end 
-    while (t != NULL) { 
+    while (p != NULL) { 
         // pass right subtree as new tree 
-        if (x > t->data) 
-            t = t->right; 
-  
+        if (k > p->key) 
+            p = p->right; 
+
         // pass left subtree as new tree 
-        else if (x < t->data) 
-            t = t->left; 
+        else if (k < p->key) 
+            p = p->left; 
         else
             return true; // if the key is found return 1 
     } 
     return false; 
 } 
-
-    node* erase(T x, node* t)
-    {
-        node* temp;
-
-        // Element not found
-        if(t == NULL)
-            return NULL;
-
-        // Searching for element
-        else if(x < t->data)
-            t->left = erase(x, t->left);
-        else if(x > t->data)
-            t->right = erase(x, t->right);
-
-        // Element found
-        // With 2 children
-        else if(t->left && t->right)
-        {
-            temp = findMin(t->right);
-            t->data = temp->data;
-            t->right = erase(t->data, t->right);
-        }
-        // With one or zero child
-        else
-        {
-            temp = t;
-            if(t->left == NULL)
-                t = t->right;
-            else if(t->right == NULL)
-                t = t->left;
-            delete temp;
-        }
-        if(t == NULL)
-            return t;
-
-        t->height = max(height(t->left), height(t->right))+1;
-
-        // If node is unbalanced
-        // If left node is deleted, right case
-        if(height(t->left) - height(t->right) == 2)
-        {
-            // right right case
-            if(height(t->left->left) - height(t->left->right) == 1)
-                return singleLeftRotate(t);
-            // right left case
-            else
-                return doubleLeftRotate(t);
-        }
-        // If right node is deleted, left case
-        else if(height(t->right) - height(t->left) == 2)
-        {
-            // left left case
-            if(height(t->right->right) - height(t->right->left) == 1)
-                return singleRightRotate(t);
-            // left right case
-            else
-                return doubleRightRotate(t);
-        }
-        return t;
-    }
-
-    T height(node* t)
-    {
-        return (t == NULL ? -1 : t->height);
-    }
-
-    T getBalance(node* t)
-    {
-        if(t == NULL)
-            return 0;
-        else
-            return height(t->left) - height(t->right);
-    }
-
-    void inorder(node* t)
+ void inorder(node* t)
     {
         if(t == NULL)
             return;
         inorder(t->left);
-        std::cout << t->data << " ";
+        std::cout << t->key << " ";
         inorder(t->right);
     }
 
@@ -223,19 +141,19 @@ public:
 
     void insert(T x)
     {
-        root = insert(x, root);
+        root = insert(root, x);
     }
 
     void erase(T x)
     {
-        root = erase(x, root);
+        root = erase(root, x);
     }
-    
+
     bool find(T x)
     {
-        return find(x, root);
+        return find(root, x);
     }
-    void display()
+        void display()
     {
         inorder(root);
         std::cout << std::endl;
