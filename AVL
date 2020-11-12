@@ -1,11 +1,13 @@
+
+template <typename T>
 class AVL
 {
     struct node
     {
-        int data;
+        T data;
         node* left;
         node* right;
-        int height;
+        T height;
     };
 
     node* root;
@@ -19,7 +21,7 @@ class AVL
         delete t;
     }
 
-    node* insert(int x, node* t)
+    node* insert(T x, node* t)
     {
         if(t == NULL)
         {
@@ -54,7 +56,13 @@ class AVL
         t->height = max(height(t->left), height(t->right))+1;
         return t;
     }
-
+    T max(T left, T right){
+        if (left > right){
+            return left;
+            }else{
+            return right;    
+                }
+        }
     node* singleRightRotate(node* &t)
     {
         node* u = t->left;
@@ -124,7 +132,7 @@ class AVL
     return false; 
 } 
 
-    node* erase(int x, node* t)
+    node* erase(T x, node* t)
     {
         node* temp;
 
@@ -185,12 +193,12 @@ class AVL
         return t;
     }
 
-    int height(node* t)
+    T height(node* t)
     {
         return (t == NULL ? -1 : t->height);
     }
 
-    int getBalance(node* t)
+    T getBalance(node* t)
     {
         if(t == NULL)
             return 0;
@@ -203,7 +211,7 @@ class AVL
         if(t == NULL)
             return;
         inorder(t->left);
-        cout << t->data << " ";
+        std::cout << t->data << " ";
         inorder(t->right);
     }
 
@@ -213,24 +221,24 @@ public:
         root = NULL;
     }
 
-    void insert(int x)
+    void insert(T x)
     {
         root = insert(x, root);
     }
 
-    void erase(int x)
+    void erase(T x)
     {
         root = erase(x, root);
     }
     
-    bool find(int x)
+    bool find(T x)
     {
         return find(x, root);
     }
     void display()
     {
         inorder(root);
-        cout << endl;
+        std::cout << std::endl;
     }
 };
 
