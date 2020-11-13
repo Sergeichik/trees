@@ -1,16 +1,15 @@
-﻿
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<time.h>
-#include<memory.h>
-#include<iostream>
-
+template<typename T>
+class ITree {
+public:
+	virtual void insert(T) = 0;
+	virtual void erase(T) = 0;
+};
 
 
 //! класс дерева
 template <typename T>
-class RBtree {
+class RBtree: public ITree<T>{
 public:
 	struct node_st { 
 		node_st *p1;
@@ -20,10 +19,7 @@ public:
 	}; // структура узла
 	node_st *tree_root;					//!< корень
 	int nodes_count;					//!< число узлов дерева
-	enum check_code { error_balance, error_struct, ok };	// код ошибки
 	void Show();						//!< вывод дерева
-	check_code Check();					//!< проверка дерева
-	bool TreeWalk(bool*, int);			//!< обход дерева и сверка значений с массивом
 	RBtree();
 	~RBtree();
 	void Clear();			//!< снести дерево				
@@ -44,9 +40,6 @@ private:
 	bool GetMin(node_st**, node_st**);	//!< найти и убрать максимальный узел поддерева
 	bool erase(node_st**, T);			//!< рекурсивная часть удаления
 	void Show(node_st*, int, char);		//!< вывод дерева, рекурсивная часть
-	check_code Check(node_st*, int, int&);//!< проверка дерева (рекурсивная часть)
-	bool TreeWalk(node_st*, bool*, int);	//!< обход дерева и сверка значений с массивом (рекурсивная часть)
-
 
 };
 
@@ -378,100 +371,3 @@ void RBtree<T>::Clear()
 	Clear(tree_root);
 	tree_root = 0;
 }
-
-
-// проверка дерева (рекурсивная часть)
-//! \param tree дерево
-//! \param d    текущая чёрная глубина
-//! \param h    эталонная чёрная глубина
-//! \result 0 или код ошибки
-template <typename T>
-typename RBtree<T>::check_code RBtree<T>::Check(node_st *tree, int d, int &h)
-{
-	if (!tree) {
-		// количество чёрных вершин на любом пути одинаковое
-		if (h < 0) h = d;
-		return h == d ? ok : error_balance;
-	}
-	node_st *p1 = tree->p1;
-	node_st *p2 = tree->p2;
-	// красная вершина должна иметь чёрных потомков
-	if (tree->red && (p1 && p1->red || p2 && p2->red)) return error_struct;
-	if (p1 && tree->value<p1->value || p2 && tree->value>p2->value) return error_struct;
-	if (!tree->red) d++;
-	check_code n = Check(p1, d, h); if (n) return n;
-	return Check(p2, d, h);
-}
-
-
-// проверка дерева
-template <typename T>
-typename RBtree<T>::check_code RBtree<T>::Check()
-{
-	int d = 0;
-	int h = -1;
-	if (!tree_root) return ok;
-	if (tree_root->red) return error_struct;
-	return Check(tree_root, d, h);
-}
-
-// обход дерева и сверка значений с массивом (рекурсивная часть)
-//! \param node  корень дерева
-//! \param array массив для сверки
-//! \param size  размер массива
-template <typename T>
-bool RBtree<T>::TreeWalk(node_st *node, bool *array, int size)
-{
-	if (!node) return false;
-	int value = node->value;
-	if (value < 0 || value >= size || !array[value]) return true;
-	array[value] = false;
-	return TreeWalk(node->p1, array, size) || TreeWalk(node->p2, array, size);
-}
-
-// обход дерева и сверка значений с массивом
-//! \param array массив для сверки
-//! \param size  размер массива
-template <typename T>
-bool RBtree<T>::TreeWalk(bool *array, int size)
-{
-	if (TreeWalk(tree_root, array, size)) return true;
-	for (int n = 0; n < size; n++) if (array[n]) return true;
-	return false;
-}
-
-
-//================================================================
-
-#define SIZE 1000	//!< размер массива провеки
-
-
-
-//! набор тестирующих процедур 
-int main()
-{
-	int n, i;
-	RBtree<int> tree;
-	bool array[SIZE];
-	srand(time(0));
-	memset(array, false, sizeof(array));
-	for (n = 0; n < SIZE * 100; n++) {
-		printf("pass: %d of %d\r", n + 1, SIZE * 100);
-		i = rand() % SIZE; array[i] = true;  tree.insert(i);
-		i = rand() % SIZE; array[i] = false; tree.erase(i);
-	}
-	putchar('\n');
-	switch (tree.Check()) {
-	case RBtree<int>::error_struct:   printf("*** structure error\n\a"); break;
-	case RBtree<int>::error_balance:  printf("*** balance error\n\a");   break;
-	default:
-		printf("nodes count: %d\n", tree.GetNodesCount());
-		break;
-	}
-	if (tree.TreeWalk(array, SIZE)) printf("*** context error\n\a");
-	getchar();
-	return 0;
-}
-
-
-
