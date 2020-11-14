@@ -1,9 +1,19 @@
 
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
+#include<memory.h>
+#include<iostream>
+
+
 template<typename T>
 class ITree {
 public:
+
+
 	virtual void insert(T) = 0;
 	virtual void erase(T) = 0;
+	virtual bool find(T) = 0;
 };
 
 
@@ -23,7 +33,7 @@ public:
 	RBtree();
 	~RBtree();
 	void Clear();			//!< снести дерево				
-	node_st* find(T);			//!< найти значение
+	bool find(T);			//!< найти значение
 	void insert(T);		//!< вставить значение
 	void erase(T);		//!< удалить значение
 	int GetNodesCount();	//!< узнать число узлов
@@ -260,7 +270,7 @@ bool RBtree<T>::BalanceRemove2(node_st **root)
 }
 
 template <typename T>
-typename RBtree<T>::node_st* RBtree<T>::find(T value)
+bool RBtree<T>::find(T value)
 {
 	node_st *node = tree_root;
 	while (node) {
@@ -371,3 +381,5 @@ void RBtree<T>::Clear()
 	Clear(tree_root);
 	tree_root = 0;
 }
+
+
