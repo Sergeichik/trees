@@ -6,7 +6,7 @@ public:
 };
 
 template <typename T>
-class AVL
+class AVL: public Itree<T>
 {
    struct node // структура для представления узлов дерева
 {
