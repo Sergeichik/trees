@@ -4,8 +4,6 @@ class ITree {
 public:
 	virtual void insert(T) = 0;
 	virtual void erase(T) = 0;
-
-	virtual ~ITree() {};
 };
 
 
